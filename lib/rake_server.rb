@@ -1,6 +1,7 @@
 module RakeServer
   autoload :Server, File.join(File.dirname(__FILE__), 'rake_server', 'server')
   autoload :Client, File.join(File.dirname(__FILE__), 'rake_server', 'client')
+  autoload :Message, File.join(File.dirname(__FILE__), 'rake_server', 'message')
 
   DEFAULT_OPTIONS = {
     :host => '127.0.0.1',

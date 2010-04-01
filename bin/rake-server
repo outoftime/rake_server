@@ -4,7 +4,7 @@ require File.join(File.dirname(__FILE__), '..', 'lib', 'rake_server')
 
 options = {}
 OptionParser.new do |opts|
-  opts.banner = "Usage: rake-server [options] [startup-tasks] (start|stop|run)"
+  opts.banner = "Usage: rake-server [options] [startup-tasks] (start|stop|run|restart)"
 
   opts.on("-q", "--quiet", "Don't output anything") { |q| options[:quiet] = q }
   opts.on("-h", "--host [HOST]", "Host to listen on") { |h| options[:host] = h }
@@ -19,6 +19,9 @@ when 'run'
   RakeServer::Server.run(ARGV, options)
 when 'stop'
   RakeServer::Server.stop(options)
+when 'restart'
+  RakeServer::Server.stop(options)
+  RakeServer::Server.start(options)
 else
   abort("Unknown command #{command.inspect}")
 end

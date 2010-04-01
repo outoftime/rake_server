@@ -8,7 +8,9 @@ rescue LoadError => e
 end
 
 module RakeServer
-  class Server < EventMachine::Protocols::LineAndTextProtocol
+  class Server < EventMachine::Connection
+    include EventMachine::Protocols::ObjectProtocol
+
     class <<self
       def start(eager_tasks, options = {})
         pid_file = File.join(pid_dir(options), "rake-server.pid")
@@ -52,29 +54,24 @@ module RakeServer
       end
     end
 
-    def receive_data(data)
-      if data == "\004"
-        close_connection
-        return
-      else
-        super(data)
-      end
-    end
-
-    def receive_line(data)
+    def receive_object(message)
       begin
-        pid = fork_and_run_tasks(
-            data.split(/\s+/).map { |task| Rake.application[task.to_sym] })
+        tasks = message.tasks.map { |task| Rake.application[task.to_sym] }
+        pid = fork_and_run_tasks(tasks, message.env || {})
       rescue => e
-        send_data("ERR #{e.message}\n")
+        send_object("ERR #{e.message}\n")
+        send_object(nil)
       end
     end
 
     private
 
-    def fork_and_run_tasks(tasks)
+    def fork_and_run_tasks(tasks, env)
       input, output = IO.pipe
       pid = fork do
+        env.each_pair do |key, value|
+          ENV[key] = value
+        end
         input.close
         STDOUT.reopen(output)
         STDERR.reopen(output)
@@ -101,7 +98,7 @@ module RakeServer
           until Process.waitpid(pid, Process::WNOHANG)
             begin
               until input.eof? || (data = input.read_nonblock(4096)).empty?
-                send_data(data) 
+                send_object(data) 
               end
             rescue Errno::EAGAIN
             end
@@ -115,8 +112,8 @@ module RakeServer
 
     def done(input)
       lambda do
-        send_data(input.read) until input.eof?
-        send_data("\004")
+        send_object(input.read) until input.eof?
+        send_object(nil)
       end
     end
   end
