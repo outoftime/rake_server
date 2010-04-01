@@ -1,0 +1,25 @@
+= RakeServer
+
+=== What is it?
+
+RakeServer is a lightweight client/server architecture for running Rake tasks.
+The server is a long-running process that loads tasks from a Rakefile and waits
+for requests to execute tasks. Each time a task is requested, the server forks,
+runs the task, and streams the output from the task back to the client.
+
+When the server is started, it can be given tasks to eager-run; this is
+mainly useful for loading application code into the pre-fork environment.
+
+=== What's the point?
+
+The main intended use case for RakeServer is to provide a means for production
+deployments to run Rake tasks in the background (e.g. via a cron) without
+needing to load the application environment from scratch each time a task is
+executed. It may also be useful for remote invocation of Rake tasks, but that is
+not the main goal.
+
+=== How do I use it?
+
+  $ cd /path/to/my/rails/app
+  $ rake-server environment
+  $ rake-client db:migrate
