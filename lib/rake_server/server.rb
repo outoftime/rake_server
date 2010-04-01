@@ -43,6 +43,22 @@ module RakeServer
         end
       end
 
+      def before_fork(&block)
+        @before_fork = block
+      end
+
+      def after_fork(&block)
+        @after_fork = block
+      end
+
+      def run_before_fork
+        @before_fork.call if @before_fork
+      end
+
+      def run_after_fork
+        @after_fork.call if @after_fork
+      end
+
       private
 
       def pid_dir(options)
@@ -68,7 +84,9 @@ module RakeServer
 
     def fork_and_run_tasks(tasks, env)
       input, output = IO.pipe
+      self.class.run_before_fork
       pid = fork do
+        self.class.run_after_fork
         env.each_pair do |key, value|
           ENV[key] = value
         end

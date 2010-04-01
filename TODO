@@ -1,2 +1,2 @@
-* Pass environment variables
+* Start task should block until child has finished starting
 * Fork hooks

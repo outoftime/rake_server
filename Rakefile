@@ -22,6 +22,15 @@ task :hello do
   puts "Hello, world!"
 end
 
+task :setup_server do
+  RakeServer::Server.before_fork do
+    `notify-send "#{Process.pid}"`
+  end
+  RakeServer::Server.after_fork do
+    `notify-send "#{Process.pid}"`
+  end
+end
+
 namespace :namespace do
   task :shout do
     system('notify-send "Namespace::Hey!"')
