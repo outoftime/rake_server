@@ -10,6 +10,24 @@ end
 module RakeServer
   class Server < EventMachine::Protocols::LineAndTextProtocol
     class <<self
+      def start(eager_tasks, options = {})
+        pid_file = File.join(pid_dir(options), "rake-server.pid")
+        pid = fork do
+          fork do
+            File.open(pid_file, 'w') { |f| f << Process.pid }
+            run(eager_tasks, options)
+          end
+        end
+        Process.waitpid(pid)
+      end
+
+      def stop(options = {})
+        pid_file = File.join(pid_dir(options), "rake-server.pid")
+        pid = IO.read(pid_file).to_i
+        Process.kill("TERM", pid)
+        FileUtils.rm(pid_file)
+      end
+
       def run(eager_tasks, options = {})
         options = DEFAULT_OPTIONS.merge(options)
         EventMachine.run do
@@ -17,7 +35,20 @@ module RakeServer
           Rake.application.load_rakefile
           eager_tasks.each { |task| Rake.application[task].invoke }
           EventMachine.start_server(options[:host], options[:port], self)
+          unless options[:quiet]
+            puts "rake-server listening on #{options[:host]}:#{options[:port]}"
+          end
         end
+      end
+
+      private
+
+      def pid_dir(options)
+        pid_dir = options[:pid_dir] || File.join(Dir.pwd, 'tmp', 'pids')
+        unless File.directory?(pid_dir)
+          raise "PID dir #{pid_dir} does not exist -- can't daemonize"
+        end
+        pid_dir
       end
     end
 

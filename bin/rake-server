@@ -1,5 +1,24 @@
 #!/usr/bin/env ruby
-
+require 'optparse'
 require File.join(File.dirname(__FILE__), '..', 'lib', 'rake_server')
 
-RakeServer::Server.run(ARGV)
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: rake-server [options] [startup-tasks] (start|stop|run)"
+
+  opts.on("-q", "--quiet", "Don't output anything") { |q| options[:quiet] = q }
+  opts.on("-h", "--host [HOST]", "Host to listen on") { |h| options[:host] = h }
+  opts.on("-p", "--port [PORT]", "Port to listen on") { |p| options[:port] = p }
+end.parse!
+
+command = ARGV.shift
+case command
+when 'start'
+  RakeServer::Server.start(ARGV, options)
+when 'run'
+  RakeServer::Server.run(ARGV, options)
+when 'stop'
+  RakeServer::Server.stop(options)
+else
+  abort("Unknown command #{command.inspect}")
+end
