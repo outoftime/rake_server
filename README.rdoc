@@ -18,8 +18,33 @@ needing to load the application environment from scratch each time a task is
 executed. It may also be useful for remote invocation of Rake tasks, but that is
 not the main goal.
 
-=== How do I use it?
+=== Basic usage
 
   $ cd /path/to/my/rails/app
-  $ rake-server environment
+  $ rake-server start environment
   $ rake-client db:migrate
+
+Valid commands to rake-server are `start`, `stop`, `run`, and `restart`. Any
+additional arguments name Rake tasks that should be eagerly run when the server
+starts. In the above example, we call the `environment` task, which loads the
+Rails environment for fast invocation of Rails-dependent tasks by the client.
+
+=== Fork hooks
+
+RakeServer forks a separate process each time the client invokes a task. In a
+Rails environment, it's necessary to re-connect to ActiveRecord each time the
+application forks. RakeServer provides pre-fork and post-fork hooks to make this
+easy.
+
+First, in your Rakefile:
+
+  namespace :rake_server
+		task :fork_hooks
+			RakeServer.before_fork { ActiveRecord::Base.remove_connection }
+			RakeServer.after_fork { ActiveRecord::Base.establish_connection }
+		end
+  end
+
+Then, when you start the server, specify your fork hooks setup as an eager task:
+
+  $ rake-server start environment rake_server:fork_hooks
