@@ -24,10 +24,11 @@ module RakeServer
       end
 
       def stop(options = {})
-        pid_file = File.join(pid_dir(options), "rake-server.pid")
-        pid = IO.read(pid_file).to_i
-        Process.kill("TERM", pid)
-        FileUtils.rm(pid_file)
+        if (pid_file = File.join(pid_dir(options), "rake-server.pid"))
+          pid = IO.read(pid_file).to_i
+          Process.kill("TERM", pid)
+          FileUtils.rm(pid_file)
+        end
       end
 
       def run(eager_tasks, options = {})
