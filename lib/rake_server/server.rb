@@ -26,7 +26,11 @@ module RakeServer
       def stop(options = {})
         if (pid_file = File.join(pid_dir(options), "rake-server.pid"))
           pid = IO.read(pid_file).to_i
-          Process.kill("TERM", pid)
+          begin
+            Process.kill("TERM", pid)
+          rescue Errno::ESRCH
+            # No worries
+          end
           FileUtils.rm(pid_file)
         end
       end
