@@ -16,6 +16,7 @@ module RakeServer
         pid_file = File.join(pid_dir(options), "rake-server.pid")
         pid = fork do
           fork do
+            Process.setsid
             File.open(pid_file, 'w') { |f| f << Process.pid }
             run(eager_tasks, options)
           end
