@@ -14,14 +14,25 @@ module RakeServer
     class <<self
       def start(eager_tasks, options = {})
         pid_file = File.join(pid_dir(options), "rake-server.pid")
-        pid = fork do
+        read, write = IO.pipe
+        tmp_pid = fork do
+          read.close
           fork do
             Process.setsid
-            File.open(pid_file, 'w') { |f| f << Process.pid }
-            run(eager_tasks, options)
+            run(eager_tasks, options) do
+              write.write(Process.pid.to_s)
+              write.close
+              STDOUT.reopen('/dev/null')
+              STDERR.reopen(STDOUT)
+            end
           end
+          write.close
         end
-        Process.waitpid(pid)
+        write.close
+        pid = read.read.to_i
+        File.open(pid_file, 'w') { |f| f << pid }
+        read.close
+        Process.waitpid(tmp_pid)
       end
 
       def stop(options = {})
@@ -39,7 +50,7 @@ module RakeServer
         end
       end
 
-      def run(eager_tasks, options = {})
+      def run(eager_tasks, options = {}, &block)
         options = DEFAULT_OPTIONS.merge(options)
         EventMachine.run do
           Rake.application.init
@@ -49,6 +60,7 @@ module RakeServer
           unless options[:quiet]
             puts "rake-server listening on #{options[:host]}:#{options[:port]}"
           end
+          block.call if block
         end
       end
 
