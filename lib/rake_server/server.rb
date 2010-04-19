@@ -14,6 +14,16 @@ module RakeServer
     class <<self
       def start(eager_tasks, options = {})
         pid_file = File.join(pid_dir(options), "rake-server.pid")
+        if File.exist?(pid_file)
+          running_pid = IO.read(pid_file).to_i
+          begin
+            Process.kill(0, running_pid)
+            raise "rake-server is already running on PID #{running_pid}"
+          rescue Errno::ESRCH
+            STDERR.puts("Cleaning stale PID file at #{pid_file}")
+            FileUtils.rm_f(pid_file)
+          end
+        end
         read, write = IO.pipe
         tmp_pid = fork do
           read.close
@@ -22,6 +32,7 @@ module RakeServer
             run(eager_tasks, options) do
               write.write(Process.pid.to_s)
               write.close
+              STDIN.reopen('/dev/null')
               STDOUT.reopen('/dev/null')
               STDERR.reopen(STDOUT)
             end
@@ -40,6 +51,14 @@ module RakeServer
           pid = IO.read(pid_file).to_i
           begin
             Process.kill("TERM", pid)
+            begin
+              loop do
+                Process.kill(0, pid)
+                sleep(0.1)
+              end
+            rescue Errno::ESRCH
+              # Process is dead
+            end
           rescue Errno::ESRCH
             STDERR.puts("No rake-server process running at PID #{pid}")
             # No worries
