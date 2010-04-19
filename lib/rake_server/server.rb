@@ -30,9 +30,12 @@ module RakeServer
           begin
             Process.kill("TERM", pid)
           rescue Errno::ESRCH
+            STDERR.puts("No rake-server process running at PID #{pid}")
             # No worries
           end
           FileUtils.rm(pid_file)
+        else
+          STDERR.puts("No PIDfile at #{pid_file}")
         end
       end
 
