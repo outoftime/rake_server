@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{rake_server}
-  s.version = "0.0.7"
+  s.version = "0.0.8"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Mat Brown", "Cedric Howe"]
-  s.date = %q{2010-04-19}
+  s.date = %q{2010-04-23}
   s.description = %q{RakeServer is a library which allows Rake tasks to be run using client requests
 to a long-running rake server, which can eagerly load required code into memory
 for fast task invocation.
