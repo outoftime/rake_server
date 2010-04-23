@@ -22,6 +22,10 @@ task :hello do
   puts "Hello, world!"
 end
 
+task :faile do
+  raise("Faile")
+end
+
 task :setup_server do
   RakeServer::Server.before_fork do
     `notify-send "#{Process.pid}"`

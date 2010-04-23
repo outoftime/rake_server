@@ -29,18 +29,25 @@ module RakeServer
           read.close
           fork do
             Process.setsid
-            run(eager_tasks, options) do
-              write.write(Process.pid.to_s)
-              write.close
-              STDIN.reopen('/dev/null')
-              STDOUT.reopen('/dev/null')
-              STDERR.reopen(STDOUT)
+            begin
+              run(eager_tasks, options) do
+                write.write(Process.pid.to_s)
+                write.close
+                STDIN.reopen('/dev/null')
+                STDOUT.reopen('/dev/null')
+                STDERR.reopen(STDOUT)
+              end
+            rescue => e
+              write.write(e.message)
             end
           end
           write.close
         end
         write.close
-        pid = read.read.to_i
+        status = read.read
+        if status =~ /^\d+/ then pid = status.to_i
+        else raise(status)
+        end
         File.open(pid_file, 'w') { |f| f << pid }
         read.close
         Process.waitpid(tmp_pid)
