@@ -56,8 +56,9 @@ module RakeServer
       def stop(options = {})
         if File.exist?(pid_file = File.join(pid_dir(options), "rake-server.pid"))
           pid = IO.read(pid_file).to_i
+          pgid = Process.getpgid(pid)
           begin
-            Process.kill("TERM", pid)
+            Process.kill("TERM", -pgid)
             begin
               loop do
                 Process.kill(0, pid)

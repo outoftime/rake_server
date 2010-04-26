@@ -14,6 +14,10 @@ task :relax do
   sleep(10)
 end
 
+task :sleep do
+  sleep
+end
+
 task :print do
   puts ENV['MESSAGE']
 end
